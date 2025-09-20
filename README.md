@@ -24,8 +24,8 @@ Você pode instalar a SDK tanto pelo **VSCode** quanto pelo **terminal**.
 
 ### 🔹 Pelo VSCode
 1. Instale a extensão [**Raspberry Pi Pico**].
-2. Com a extensão será baixada outras extensões com cmake, python e outro, necessária para projeto funcionar.
-
+2. Ao instalar essa extensão, outras dependências, como CMake e Python, serão baixadas automaticamente, pois são necessárias para o funcionamento do projeto.
+3. 
 ### 🔹 Pelo Terminal (Linux / WSL / macOS)
 ```
 # Baixe as bibliotecas necessárias:
