@@ -80,7 +80,7 @@ git submodule update --init --recursive
    >   ```
 
 
-![Extensão Pico Vscode]()
+![Extensão Pico Vscode](sdk_pico.png)
 
 ### Pelo Terminal
 ```bash
