@@ -41,13 +41,15 @@ export PICO_SDK_PATH=$HOME/pico-sdk
 
 ```
 
+Para mais detalhes, consulte o repositório oficial da SDK do Raspberry Pi Pico: https://github.com/raspberrypi/pico-sdk/tree/master?tab=readme-ov-file
+
 ## ⬇️ Clonando o Repositório
 
 Este projeto usa o **FreeRTOS-LTS como submódulo**.  
 Por isso, é importante clonar com a opção `--recurse-submodules`:
 
 ```bash
-git clone --recurse-submodules https://github.com/SEU_USER/water_time.git
+git clone --recurse-submodules https://github.com/MoniqueMoreira/Water_Time.git
 cd water_time
 ```
 
@@ -76,6 +78,9 @@ git submodule update --init --recursive
    >   ```bash
    >   picotool reboot -u -f
    >   ```
+
+
+![Extensão Pico Vscode]()
 
 ### Pelo Terminal
 ```bash
