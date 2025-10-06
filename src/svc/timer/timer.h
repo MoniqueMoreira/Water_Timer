@@ -7,6 +7,9 @@
 
 #include "return_status.h"
 
+#include "svc/watchdog/watchdog.h"
+#include "svc/watchdog/watchdog_cfg.h"
+
 #define MAX_TIMERS 5
 
 typedef enum {

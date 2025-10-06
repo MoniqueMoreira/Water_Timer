@@ -17,7 +17,7 @@ typedef struct {
 typedef struct {
     bool is_initialized;
     TIMER_Config_t timers[MAX_TIMERS];
-    SemaphoreHandle_t mutex;   // 🔹 proteção para acessar os timers
+    SemaphoreHandle_t mutex; 
 } Self;
 
 static Self self = { .is_initialized = false };
@@ -138,13 +138,12 @@ static void __TIME_Task__(void *pvParameters) {
                     self.timers[i].elapsed_ms++;
                     if (self.timers[i].elapsed_ms >= self.timers[i].duration_ms) {
                         self.timers[i].status = TIMER_EXPIRED;
-                        LOGGER_Info("TIMER", "Timer '%s' expirado", self.timers[i].name);
+                        //LOGGER_Info("TIMER", "Timer '%s' expirado", self.timers[i].name);
                     }
                 }
             }
             xSemaphoreGive(self.mutex);
         }
-
         vTaskDelay(pdMS_TO_TICKS(1)); // aguarda 1 ms
     }
 }
