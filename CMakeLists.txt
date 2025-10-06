@@ -50,6 +50,8 @@ pico_enable_stdio_usb(Water_Time 1)
 target_link_libraries(Water_Time
     pico_stdlib
     hardware_flash
+    hardware_watchdog
+    hardware_adc
     hardware_sync
     pico_flash
     hardware_dma
