@@ -1,7 +1,89 @@
-# Water_Time 🚰🌱
+# Water_Timer 🚰🌱
 
-Mini temporizador inteligente para irrigação, desenvolvido em **C com FreeRTOS-LTS** para o **Raspberry Pi Pico (RP2040)**.  
-O sistema simula um controlador de irrigação com botões, sensores e acionamento temporizado.
+## Projeto Water Timer: Protótipo de Sistema Embarcado para Irrigação Inteligente
+
+O Water Timer é um protótipo de sistema embarcado desenvolvido em C com o objetivo de monitorar e controlar a irrigação de plantas de forma inteligente e eficiente. Este projeto é focado em demonstrar a aplicação de conceitos de Sistemas Operacionais em Tempo Real (RTOS) e arquitetura de software em camadas para microcontrolador RP2040 (Raspberry Pico 2020).
+
+### Objetivo Central
+Criar um dispositivo embarcado que regula a vazão de água e o tempo de irrigação com base na umidade do solo e em perfis de cultivo pré-definidos.
+
+### Funcionalidades do Protótipo
+Monitoramento de Umidade: Leitura contínua da umidade do solo através de sensores ***SENSOR HUMIDITY***.
+
+Controle Automatizado: Acionamento de válvulas(**RELÉ**) para controlar a vazão de água, garantindo que a planta receba água apenas quando necessário.
+
+Configurações Irrigação: Possibilidade de definir tempo de irrigações, melhorando a precisão do manejo controlando a qunatidade de água.
+
+## Especificações
+
+Este documento descreve a arquitetura de software em camadas do sistema de irrigação inteligente **WATER TIMER**, desenvolvido para um microcontrolador **RP2040** rodando o **FreeRTOS**. A estrutura em camadas visa garantir a manutenibilidade, o baixo acoplamento e a separação clara de responsabilidades (Separation of Concerns).
+
+![Arquitetura em camadas](arquitetura.png)
+
+## 1. Estrutura Arquitetural em Camadas
+
+A arquitetura do `WATER TIMER` é dividida em cinco camadas principais, com a dependência fluindo, em sua maioria, de cima para baixo.
+
+| Camada | Propósito Principal | Exemplos de Módulos |
+| :--- | :--- | :--- |
+| **5. Aplicação** | Ponto de entrada e lógica principal de inicialização. | `SETUP` | `WATER_TIMER`|
+| **4. Serviços** | Lógica de negócio de alto nível e *middleware*. | `LOGGER`, `TIMER SOFTWARE`, `SETTINGS` |
+| **3. Interface** | Abstração funcional de *drivers* de baixo nível. | `SERIAL`, `FLASH`, `ETHERNET` |
+| **2. Drives** | Abstração de Hardware (HAL) e **Kernel RTOS**. | `USB`, `UART`, `GPIOs`, `FREERTOS` |
+| **1. Hardware** | Componentes físicos do sistema. | `RP2040`, `RELEY`, `SENSOR HUMIDITY` |
+
+---
+
+## 2. Detalhamento dos Módulos
+
+Esta seção detalha a função de cada componente de software dentro de sua respectiva camada.
+
+### Camada Aplicação (Application)
+
+| Módulo | Responsabilidade |
+| :--- | :--- |
+| `WATER_TIMER` | Ponto de entrada do sistema. Inicializa o FreeRTOS, *drivers* e todos os Módulos de Serviço. |
+| `SETUP` | Gerenciar e configurar o sistema para controle dos periféricos. |
+
+### Camada Serviços (Services)
+
+| Módulo | Responsabilidade |
+| :--- | :--- |
+| `TIMER SOFTWARE` | Implementa a lógica de agendamento de alto nível (ex: ciclo de irrigação) utilizando os recursos de *timer*. |
+| `IO MANAGER` | Gerencia o estado e o controle de E/S do sistema (leitura de botões, controle de relé, leitura de ADC e LEDs). |
+| `SETTINGS` | Gerencia a leitura, escrita e persistência de dados de configuração na memória flash. |
+| `LOGGER` | Gerencia a formatação e a saída de mensagens de *log* e *debug*. |
+| `WDOG MANAGER` | Serviço que configura e alimenta o *Watchdog Timer* (`WDOG`) para segurança e resiliência do sistema. |
+
+### Camada Interface (Interface)
+
+| Módulo | Responsabilidade |
+| :--- | :--- |
+| `SERIAL` | Abstrai a comunicação serial, unificando `USB` e `UART` em uma única interface lógica para os Serviços. |
+| `FLASH` | Abstrai o acesso à memória não volátil (`QSPI`), fornecendo uma interface de leitura/escrita simples para o módulo `SETTINGS`. |
+| `ETHERNET` | Módulo de abstração de rede para comunicação via `RJ45`. |
+
+### Camada Drives (Drivers / HAL + RTOS)
+
+Esta camada inclui o kernel do FreeRTOS, que fornece o ambiente multitarefa.
+
+| Módulo | Tipo | Responsabilidade |
+| :--- | :--- | :--- |
+| `FREERTOS` | Kernel RTOS | Base para o sistema concorrente (Agendamento, Tempo). |
+| `UART`, `USB` | Driver Periférico | Drivers de baixo nível para comunicação serial e USB. |
+| `GPIOs` | Driver Periférico | Controle de pinos de propósito geral (E/S). |
+| `QSPI` | Driver Periférico | Acesso rápido à memória flash externa. |
+| `WDOG` | Driver Periférico | Controle do *Watchdog Timer* de hardware. |
+
+### Camada Hardware (Hardware)
+
+| Módulo | Descrição |
+| :--- | :--- |
+| `RP2040` | Microcontrolador principal do sistema. |
+| `RELEY`, `LEDs`, `BUTTON` | Atuadores e sensores básicos de E/S. |
+| `SENSOR HUMIDITY` | Sensor responsável pela leitura da umidade do solo. |
+| `MEMORY` | Módulo de memória externa persistente. |
+| `CONECTOR USB`, `RJ45` | Conectores físicos de comunicação. |
 
 ---
 
