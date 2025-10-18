@@ -20,6 +20,8 @@ Este documento descreve a arquitetura de software em camadas do sistema de irrig
 
 ![Arquitetura em camadas](arquitetura.png)
 
+[Draw IO: Arquitetura] (https://drive.google.com/file/d/12xOhJRqfqJ655gAyomHIFOzVmu6b6NAL/view?usp=sharing)
+
 ## 1. Estrutura Arquitetural em Camadas
 
 A arquitetura do `WATER TIMER` é dividida em cinco camadas principais, com a dependência fluindo, em sua maioria, de cima para baixo.
