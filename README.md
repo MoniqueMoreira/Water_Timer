@@ -49,7 +49,9 @@ Este documento descreve a arquitetura de software em camadas do sistema de irrig
 
 ![Arquitetura em camadas](arquitetura.png)
 
-[Draw IO: Arquitetura] (https://drive.google.com/file/d/12xOhJRqfqJ655gAyomHIFOzVmu6b6NAL/view?usp=sharing)
+[Draw IO: Arquitetura](https://drive.google.com/file/d/12xOhJRqfqJ655gAyomHIFOzVmu6b6NAL/view?usp=sharing)
+
+**Nota: Os modulos rachurados, são modulos que não serão usado nesta aplicação.**
 
 ## 1. Estrutura Arquitetural em Camadas
 
@@ -59,7 +61,7 @@ A arquitetura do `WATER TIMER` é dividida em cinco camadas principais, com a de
 | :--- | :--- | :--- |
 | **5. Aplicação** | Ponto de entrada e lógica principal de inicialização. | `SETUP` | `WATER_TIMER`|
 | **4. Serviços** | Lógica de negócio de alto nível e *middleware*. | `LOGGER`, `TIMER SOFTWARE`, `SETTINGS` |
-| **3. Interface** | Abstração funcional de *drivers* de baixo nível. | `SERIAL`, `FLASH`, `ETHERNET` |
+| **3. Interface** | Abstração funcional de *drivers* de baixo nível. | `SERIAL`, `FLASH` |
 | **2. Drives** | Abstração de Hardware (HAL) e **Kernel RTOS**. | `USB`, `UART`, `GPIOs`, `FREERTOS` |
 | **1. Hardware** | Componentes físicos do sistema. | `RP2040`, `RELEY`, `SENSOR HUMIDITY` |
 
@@ -92,7 +94,6 @@ Esta seção detalha a função de cada componente de software dentro de sua res
 | :--- | :--- |
 | `SERIAL` | Abstrai a comunicação serial, unificando `USB` e `UART` em uma única interface lógica para os Serviços. |
 | `FLASH` | Abstrai o acesso à memória não volátil (`QSPI`), fornecendo uma interface de leitura/escrita simples para o módulo `SETTINGS`. |
-| `ETHERNET` | Módulo de abstração de rede para comunicação via `RJ45`. |
 
 ### Camada Drives (Drivers / HAL + RTOS)
 
@@ -114,7 +115,7 @@ Esta camada inclui o kernel do FreeRTOS, que fornece o ambiente multitarefa.
 | `RELEY`, `LEDs`, `BUTTON` | Atuadores e sensores básicos de E/S. |
 | `SENSOR HUMIDITY` | Sensor responsável pela leitura da umidade do solo. |
 | `MEMORY` | Módulo de memória externa persistente. |
-| `CONECTOR USB`, `RJ45` | Conectores físicos de comunicação. |
+| `CONECTOR USB`| Conectores físicos de comunicação. |
 
 ---
 
