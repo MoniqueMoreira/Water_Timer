@@ -13,6 +13,35 @@ Monitoramento de Umidade: Leitura contínua da umidade do solo através de senso
 Controle Automatizado: Acionamento de válvulas(**RELÉ**) para controlar a vazão de água, garantindo que a planta receba água apenas quando necessário.
 
 Configurações Irrigação: Possibilidade de definir tempo de irrigações, melhorando a precisão do manejo controlando a qunatidade de água.
+## Circuito e Pinout
+
+### Componentes
+
+| Componente | Quantidade | Funcionalidade |
+| :--- | :--- | :--- |
+| Butões | 2 | Incrementa e Decrementa configurações|
+| Led vermelho | 2 | Feedback de configurações |
+| Led verde | 1 | Feedback de valvula aberta |
+| Relé | 1 | Ativar bomba de água |
+| Sensor Humidade | 1 | Feedback de quantidade de água |
+
+### Pinout 
+
+| Componente | GPIO | 
+| :--- | :--- |
+| Butões 1 | 2 |
+| Butões 2 | 3 |
+| Led  vermelho (Bit 1) | 12 |
+| Led vermelho (Bit 2) | 13 |
+| Led verde | 11 |
+| Relé | 28 | 
+| Sensor Humidade | 26 |
+| GND | 4, 6 e 8|
+| VCC  | 3.3V |
+
+![Circuito](circuito.png)
+
+
 
 ## Especificações
 
