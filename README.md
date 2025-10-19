@@ -22,6 +22,8 @@ Configurações Irrigação: Possibilidade de definir tempo de irrigações, mel
 | Butões | 2 | Incrementa e Decrementa configurações|
 | Led vermelho | 2 | Feedback de configurações |
 | Led verde | 1 | Feedback de valvula aberta |
+| Resistor 330 ohm | 3 | Regular a tensão que vai para LEDs |
+| Resistor 10K ohm | 2 | Pull up botões |
 | Relé | 1 | Ativar bomba de água |
 | Sensor Humidade | 1 | Feedback de quantidade de água |
 
@@ -40,8 +42,6 @@ Configurações Irrigação: Possibilidade de definir tempo de irrigações, mel
 | VCC  | 3.3V |
 
 ![Circuito](circuito.png)
-
-
 
 ## Especificações
 
