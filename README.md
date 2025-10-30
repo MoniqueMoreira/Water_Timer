@@ -13,6 +13,11 @@ Monitoramento de Umidade: Leitura contínua da umidade do solo através de senso
 Controle Automatizado: Acionamento de válvulas(**RELÉ**) para controlar a vazão de água, garantindo que a planta receba água apenas quando necessário.
 
 Configurações Irrigação: Possibilidade de definir tempo de irrigações, melhorando a precisão do manejo controlando a qunatidade de água.
+
+## Diagrama de sequência
+
+![Diagrama de Sequência](sequencia.png)
+
 ## Circuito e Pinout
 
 ### Componentes
