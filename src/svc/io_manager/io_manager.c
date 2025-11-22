@@ -1,8 +1,11 @@
 #include "io_manager.h"
+#include "io_benchmark.h"
 #include "svc/debounce/debounce.h"
 #include "svc/watchdog/watchdog.h"
 #include "svc/watchdog/watchdog_cfg.h"
 #include "itf/logger/logger.h"
+#include "test/benchmark.h"
+#include "test/benchmark_cfg.h"
 
 #include "pico/stdlib.h"
 #include "hardware/adc.h"
@@ -21,30 +24,16 @@ typedef struct {
 
 static Self_t self = {0};
 
-// ==== Arrays de mapeamento de GPIO ====
-static const uint8_t button_pins[] = {
-    BTN1_PIN, 
-    BTN2_PIN
-};
+const uint8_t button_pins[] = { BTN1_PIN, BTN2_PIN };
+const uint8_t led_pins[]    = { LED1_PIN, LED2_PIN, LED3_PIN, LED_RELAY_PIN };
+const uint8_t relay_pins[]  = { WATER_PUMP };
+const uint8_t adc_pins[]    = { HUMIDITY_PIN };
 
-static const uint8_t led_pins[] = {
-    LED1_PIN,
-    LED2_PIN,
-    LED3_PIN,
-    LED_RELAY_PIN
-};
-
-static uint8_t adc_pins[] = {
-    HUMIDITY_PIN,
-};
-
-static uint8_t reley_pins[] = {
-    WATER_PUMP,
-};
-
-// ==== Prototypes das tasks ====
+// ==== Prototypes ====
 static void __IO_MANAGER_Input_Task__(void *pvParameters);
 static void __IO_MANAGER_Output_Task__(void *pvParameters);
+RETURN_STATUS_t IO_MANAGER_Input_Run(void);
+RETURN_STATUS_t IO_MANAGER_Output_Run(void);
 
 // ==== Inicialização ====
 RETURN_STATUS_t IO_MANAGER_Init(void) {
@@ -63,16 +52,16 @@ RETURN_STATUS_t IO_MANAGER_Init(void) {
     }
 
     // GPIO do relé
-    for (int i=0; i<RELEY_COUNT; i++){
-        gpio_init(reley_pins[i]);
-        gpio_set_dir(reley_pins[i], true);
-        gpio_put(reley_pins[i], 0);
+    for (int i=0; i<RELAY_COUNT; i++){
+        gpio_init(relay_pins[i]);
+        gpio_set_dir(relay_pins[i], true);
+        gpio_put(relay_pins[i], 0);
     }
     
     // ADCs
     adc_init();
     for (int i = 0; i < ADC_COUNT; i++) {
-        adc_gpio_init(adc_pins[i]); // Inicializa GPIOs ADC sequenciais
+        adc_gpio_init(adc_pins[i]);
     }
     
     // Debounce
@@ -81,93 +70,139 @@ RETURN_STATUS_t IO_MANAGER_Init(void) {
     // Mutex
     self.io_mutex = xSemaphoreCreateMutex();
 
-    // Tasks
+#ifdef IO_BENCHMARK_ENABLED
+    IO_BENCHMARK_Init();
+    BENCHMARK_Reset();
+
+    // Executa benchmark de Input
+    for(int i=0; i<BENCHMARK_MAX_SAMPLES; i++){
+        BENCHMARK_Start();
+        IO_MANAGER_Input_Run();
+        BENCHMARK_Stop();
+    }
+    BENCHMARK_Report("IO_INPUT");
+
+    // Executa benchmark de Output
+    BENCHMARK_Reset();
+    for(int i=0; i<BENCHMARK_MAX_SAMPLES; i++){
+        BENCHMARK_Start();
+        IO_MANAGER_Output_Run();
+        BENCHMARK_Stop();
+    }
+    BENCHMARK_Report("IO_INPUT");
+
+#else
+    // Tasks FreeRTOS
     xTaskCreate(__IO_MANAGER_Input_Task__, "Input", 256, NULL, 2, &self.xTask_Input);
     xTaskCreate(__IO_MANAGER_Output_Task__, "Output", 256, NULL, 2, &self.xTask_Output);
+#endif
 
     return RETURN_STATUS_OK;
 }
 
-// ==== Task de Input ====
-static void __IO_MANAGER_Input_Task__(void *pvParameters) {
-    (void) pvParameters;
-
-     TickType_t xLastWakeTime = xTaskGetTickCount();
-
-    while(1){
-        xSemaphoreTake(self.io_mutex, portMAX_DELAY);
-
-        // Lê botões com debounce
+// ==== Funções Run com retorno de status ====
+RETURN_STATUS_t IO_MANAGER_Input_Run(void) {
+    if(xSemaphoreTake(self.io_mutex, pdMS_TO_TICKS(100)) == pdTRUE) 
+    {
         for(int i=0; i<BTN_COUNT; i++){
             uint8_t raw = gpio_get(button_pins[i]);
             self.inputs.button[i] = DEBOUNCE_Update(i, raw);
-            
         }
 
-        // Lê ADC
         for (uint8_t i = 0; i < ADC_COUNT; i++) { 
-
             adc_select_input(i); 
             uint16_t value = adc_read();
             float adc_percentage = (value / 4095.0f) * 100.0f;
-    
             self.inputs.adc[i] = adc_percentage;
         }
 
-        //LOGGER_Info("IO_MANAGER", "Inputs: BTN1=%d, BTN2=%d, HUMIDITY_ADC=%d", self.inputs.button[0], self.inputs.button[1], self.inputs.adc[0]);
-
         xSemaphoreGive(self.io_mutex);
-
-        WATCHDOG_Notify(WDOG_TASK_IO_INPUT);
-        vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(25));
+        return RETURN_STATUS_OK;
     }
+    return RETURN_STATUS_TIMEOUT;
 }
 
-// ==== Task de Output ====
-static void __IO_MANAGER_Output_Task__(void *pvParameters) {
-    (void) pvParameters;
-
-    while(1){
-        xSemaphoreTake(self.io_mutex, portMAX_DELAY);
-
-        //LOGGER_Info("IO_MANAGER", "SetOutputs called: LED1=%d, LED2=%d, LED3=%d, RELAY_LED=%d, RELAY=%d",self.outputs.led[0], self.outputs.led[1], self.outputs.led[2], self.outputs.led[3], self.outputs.relay[0]);
-
-        // LEDs
+RETURN_STATUS_t IO_MANAGER_Output_Run(void) {
+    if(xSemaphoreTake(self.io_mutex, pdMS_TO_TICKS(100)) == pdTRUE) 
+    {
         for(int i=0; i<LED_COUNT; i++){
             gpio_put(led_pins[i], self.outputs.led[i]);
         }
 
-        // Relé
-        for (int i=0; i<RELEY_COUNT; i++){
-            gpio_put(reley_pins[i], self.outputs.relay[i]);
+        for(int i=0; i<RELAY_COUNT; i++){
+            gpio_put(relay_pins[i], self.outputs.relay[i]);
         }
 
         xSemaphoreGive(self.io_mutex);
+        return RETURN_STATUS_OK;
+    }
+    return RETURN_STATUS_TIMEOUT;
+}
 
-        WATCHDOG_Notify(WDOG_TASK_IO_OUTPUT);
-        vTaskDelay(pdMS_TO_TICKS(20));
+// ==== Input Task ====
+static void __IO_MANAGER_Input_Task__(void *pvParameters) {
+    (void) pvParameters;
+    TickType_t xLastWakeTime = xTaskGetTickCount();
+
+    while(1){
+        IO_MANAGER_Input_Run();
+
+        WATCHDOG_Notify(WDOG_TASK_IO_INPUT);
+        vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(50));
     }
 }
 
-// ==== APIs ====
-IO_InputState_t IO_MANAGER_Get_Inputs(void){
-    IO_InputState_t copy;
-    xSemaphoreTake(self.io_mutex, portMAX_DELAY);
-    copy = self.inputs;
-    xSemaphoreGive(self.io_mutex);
-    return copy;
+// ==== Output Task ====
+static void __IO_MANAGER_Output_Task__(void *pvParameters) {
+    (void) pvParameters;
+
+    while(1){
+        IO_MANAGER_Output_Run();
+
+        WATCHDOG_Notify(WDOG_TASK_IO_OUTPUT);
+        vTaskDelay(pdMS_TO_TICKS(50));
+    }
 }
 
-void IO_MANAGER_Set_Outputs(IO_OutputState_t newState){
-    xSemaphoreTake(self.io_mutex, portMAX_DELAY);
-    self.outputs = newState;
-    xSemaphoreGive(self.io_mutex);
+// ==== APIs com ponteiro para dados e retorno de status ====
+RETURN_STATUS_t IO_MANAGER_Get_Inputs(IO_InputState_t *pCopy){
+    if(pCopy == NULL) 
+    {
+        return RETURN_STATUS_INVALID_PARAM;  // opcional: verifica ponteiro válido
+    }
+
+    if(xSemaphoreTake(self.io_mutex, pdMS_TO_TICKS(100)) == pdTRUE) 
+    {
+        *pCopy = self.inputs;
+        xSemaphoreGive(self.io_mutex);
+        return RETURN_STATUS_OK;
+    }
+    return RETURN_STATUS_TIMEOUT;
 }
 
-IO_OutputState_t IO__MANAGER_Get_Outputs(void){
-    IO_OutputState_t copy;
-    xSemaphoreTake(self.io_mutex, portMAX_DELAY);
-    copy = self.outputs;
-    xSemaphoreGive(self.io_mutex);
-    return copy;
+RETURN_STATUS_t IO_MANAGER_Set_Outputs(const IO_OutputState_t *pNewState){
+    if(pNewState == NULL) 
+    {
+        return RETURN_STATUS_INVALID_PARAM;  // opcional: verifica ponteiro válido
+    }
+
+    if(xSemaphoreTake(self.io_mutex, pdMS_TO_TICKS(100)) == pdTRUE) 
+    {
+        self.outputs = *pNewState;
+        xSemaphoreGive(self.io_mutex);
+        return RETURN_STATUS_OK;
+    }
+    return RETURN_STATUS_TIMEOUT;
+}
+
+RETURN_STATUS_t IO_MANAGER_Get_Outputs(IO_OutputState_t *pCopy){
+    if(pCopy == NULL) return RETURN_STATUS_INVALID_PARAM;
+
+    if(xSemaphoreTake(self.io_mutex, pdMS_TO_TICKS(100)) == pdTRUE) 
+    {
+        *pCopy = self.outputs;
+        xSemaphoreGive(self.io_mutex);
+        return RETURN_STATUS_OK;
+    }
+    return RETURN_STATUS_TIMEOUT;
 }
