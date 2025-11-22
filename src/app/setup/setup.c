@@ -17,8 +17,12 @@ static void __SETUP_Task__(void *pvParameters) {
     bool state = false;
 
     TickType_t xLastWakeTime = xTaskGetTickCount();
+
     for (;;) {
-        inputs = IO_MANAGER_Get_Inputs();
+        // Lê entradas
+        if(IO_MANAGER_Get_Inputs(&inputs) != RETURN_STATUS_OK) {
+            LOGGER_Error("SETUP_TASK", "Falha ao ler entradas (mutex ocupado)");
+        }
 
         // Botão 1 -> controla relé com timer
         if (inputs.button[0]) {
@@ -26,6 +30,7 @@ static void __SETUP_Task__(void *pvParameters) {
             LOGGER_Info("SETUP_TASK", "Botão 1 pressionado, estado do relé: %d", outputs.relay[0]);
             TIMER_Start("Relé", 10000); // liga por 10s
         }
+
         if (TIMER_Check("Relé") == TIMER_EXPIRED) {
             LOGGER_Info("SETUP_TASK", "Timer do relé expirou, desligando relé");
             TIMER_Stop("Relé");
@@ -51,7 +56,9 @@ static void __SETUP_Task__(void *pvParameters) {
         }
 
         // Aplica estados nas saídas
-        IO_MANAGER_Set_Outputs(outputs);
+        if(IO_MANAGER_Set_Outputs(&outputs) != RETURN_STATUS_OK) {
+            LOGGER_Error("SETUP_TASK", "Falha ao aplicar saídas (mutex ocupado)");
+        }
 
         //WATCHDOG_Notify(WDOG_TASK_SETUP);
         vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(100));
