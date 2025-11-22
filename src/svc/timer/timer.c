@@ -1,5 +1,12 @@
 #include "timer.h"
+#include "timer_benchmark.h"
+#include "return_status.h"
 #include "itf/logger/logger.h"
+#include "test/benchmark.h"
+#include "test/benchmark_cfg.h"
+#include "svc/watchdog/watchdog.h"
+#include "svc/watchdog/watchdog_cfg.h"
+
 
 #include "FreeRTOS.h"
 #include "task.h"
@@ -25,7 +32,9 @@ static Self self = { .is_initialized = false };
 /**
  * @brief Task que atualiza todos os self.timers (chamada pelo FreeRTOS)
  */
-static void __TIME_Task__(void *pvParameters);
+static void __TIMER_Task__(void *pvParameters);
+
+static RETURN_STATUS_t __TIMER_Run_Timer(void);
 
 // Inicializa todos os timers
 RETURN_STATUS_t TIMER_Init() {
@@ -45,8 +54,21 @@ RETURN_STATUS_t TIMER_Init() {
         return RETURN_STATUS_ERROR; // falha ao criar mutex
     }
 
-    xTaskCreate(__TIME_Task__, "TIMER_Task", 256, NULL, tskIDLE_PRIORITY + 3, NULL);
 
+#ifdef TIMER_BENCHMARK_ENABLED
+
+    TIMER_BENCHMARK_Run_All();
+    
+    BENCHMARK_Reset();
+    for(int i=0; i<BENCHMARK_MAX_SAMPLES; i++){
+        BENCHMARK_Start();
+        __TIMER_Run_Timer();
+        BENCHMARK_Stop();
+    }
+    BENCHMARK_Report("TIMER_TASK");
+#else
+    xTaskCreate(__TIMER_Task__, "TIMER_Task", 256, NULL, tskIDLE_PRIORITY + 3, NULL);
+#endif // TIMER_BENCHMARK_ENABLED
     self.is_initialized = true;
     return RETURN_STATUS_OK;
 }
@@ -129,21 +151,29 @@ TIMER_Return_Status_t TIMER_Check(const char *name) {
     return result;
 }
 
-// Task que atualiza todos os timers
-static void __TIME_Task__(void *pvParameters) {
-    while (1) {
-        if (xSemaphoreTake(self.mutex, portMAX_DELAY) == pdTRUE) {
-            for (int i = 0; i < MAX_TIMERS; i++) {
-                if (self.timers[i].status == TIMER_ACTIVE) {
-                    self.timers[i].elapsed_ms++;
-                    if (self.timers[i].elapsed_ms >= self.timers[i].duration_ms) {
-                        self.timers[i].status = TIMER_EXPIRED;
-                        //LOGGER_Info("TIMER", "Timer '%s' expirado", self.timers[i].name);
-                    }
+static RETURN_STATUS_t __TIMER_Run_Timer(void)
+{
+    if (xSemaphoreTake(self.mutex, portMAX_DELAY) == pdTRUE) {
+        for (int i = 0; i < MAX_TIMERS; i++) {
+            if (self.timers[i].status == TIMER_ACTIVE) {
+                self.timers[i].elapsed_ms++;
+                if (self.timers[i].elapsed_ms >= self.timers[i].duration_ms) {
+                    self.timers[i].status = TIMER_EXPIRED;
+                    //LOGGER_Info("TIMER", "Timer '%s' expirado", self.timers[i].name);
                 }
             }
-            xSemaphoreGive(self.mutex);
         }
+        xSemaphoreGive(self.mutex);
+    }
+    return RETURN_STATUS_OK;
+}
+
+// Task que atualiza todos os timers
+static void __TIMER_Task__(void *pvParameters) {
+    while (1) {
+        
+        __TIMER_Run_Timer();
+        WATCHDOG_Notify(WDOG_TASK_TIMER);
         vTaskDelay(pdMS_TO_TICKS(1)); // aguarda 1 ms
     }
 }
