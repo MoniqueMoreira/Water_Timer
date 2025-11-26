@@ -15,7 +15,7 @@ Controle Automatizado: Acionamento de válvulas(**RELÉ**) para controlar a vaz�
 Configurações Irrigação: Possibilidade de definir tempo de irrigações, melhorando a precisão do manejo controlando a qunatidade de água.
 
 ## Diagrama de sequência
-
+![Diagrama de Sequência](maquina.png)
 ![Diagrama de Sequência](sequencia.png)
 
 ## Circuito e Pinout
