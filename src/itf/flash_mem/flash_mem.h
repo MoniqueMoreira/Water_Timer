@@ -23,6 +23,8 @@
 
 #include <string.h>
 
+#define FLASH_MEM_PAGE_SIZE              256     /**< Tamanho da página de escrita da flash (256 bytes). */
+#define FLASH_MEM_SECTOR_SIZE            4096  
 
 typedef enum
 {
