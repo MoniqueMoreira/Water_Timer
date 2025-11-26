@@ -5,7 +5,6 @@
 
 #define BENCHMARK_MAX_SAMPLES 2000
 
-void BENCHMARK_Init(void);
 void BENCHMARK_Start(void);
 void BENCHMARK_Stop(void);
 void BENCHMARK_Report(const char *label);
