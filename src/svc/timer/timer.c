@@ -74,7 +74,7 @@ RETURN_STATUS_t TIMER_Init() {
 }
 
 TIMER_Return_Status_t TIMER_Start(const char *name, uint32_t duration_ms) {
-    if (xSemaphoreTake(self.mutex, portMAX_DELAY) == pdTRUE) {
+    if (xSemaphoreTake(self.mutex, pdMS_TO_TICKS(100)) == pdTRUE) {
         int free_slot = -1;
 
         for (int i = 0; i < MAX_TIMERS; i++) {
@@ -104,7 +104,7 @@ TIMER_Return_Status_t TIMER_Start(const char *name, uint32_t duration_ms) {
 }
 
 TIMER_Return_Status_t TIMER_Stop(const char *name) {
-    if (xSemaphoreTake(self.mutex, portMAX_DELAY) == pdTRUE) {
+    if (xSemaphoreTake(self.mutex, pdMS_TO_TICKS(100)) == pdTRUE) {
         for (int i = 0; i < MAX_TIMERS; i++) {
             if (self.timers[i].name && strcmp(self.timers[i].name, name) == 0) {
                 self.timers[i].status = TIMER_INACTIVE;
@@ -121,7 +121,7 @@ TIMER_Return_Status_t TIMER_Stop(const char *name) {
 }
 
 TIMER_Return_Status_t TIMER_Reset(const char *name) {
-    if (xSemaphoreTake(self.mutex, portMAX_DELAY) == pdTRUE) {
+    if (xSemaphoreTake(self.mutex, pdMS_TO_TICKS(100)) == pdTRUE) {
         for (int i = 0; i < MAX_TIMERS; i++) {
             if (self.timers[i].name && strcmp(self.timers[i].name, name) == 0) {
                 self.timers[i].elapsed_ms = 0;
@@ -138,7 +138,7 @@ TIMER_Return_Status_t TIMER_Reset(const char *name) {
 TIMER_Return_Status_t TIMER_Check(const char *name) {
     TIMER_Return_Status_t result = TIMER_INACTIVE;
 
-    if (xSemaphoreTake(self.mutex, portMAX_DELAY) == pdTRUE) {
+    if (xSemaphoreTake(self.mutex, pdMS_TO_TICKS(100)) == pdTRUE) {
         for (int i = 0; i < MAX_TIMERS; i++) {
             if (self.timers[i].name && strcmp(self.timers[i].name, name) == 0) {
                 result = self.timers[i].status;
@@ -153,7 +153,8 @@ TIMER_Return_Status_t TIMER_Check(const char *name) {
 
 static RETURN_STATUS_t __TIMER_Run_Timer(void)
 {
-    if (xSemaphoreTake(self.mutex, portMAX_DELAY) == pdTRUE) {
+    RETURN_STATUS_t err =  RETURN_STATUS_TIMEOUT;
+    if (xSemaphoreTake(self.mutex, pdMS_TO_TICKS(100)) == pdTRUE) {
         for (int i = 0; i < MAX_TIMERS; i++) {
             if (self.timers[i].status == TIMER_ACTIVE) {
                 self.timers[i].elapsed_ms++;
@@ -164,8 +165,10 @@ static RETURN_STATUS_t __TIMER_Run_Timer(void)
             }
         }
         xSemaphoreGive(self.mutex);
+        err = RETURN_STATUS_OK;
     }
-    return RETURN_STATUS_OK;
+    WATCHDOG_Notify(WDOG_TASK_TIMER);
+    return err;
 }
 
 // Task que atualiza todos os timers
@@ -173,7 +176,6 @@ static void __TIMER_Task__(void *pvParameters) {
     while (1) {
         
         __TIMER_Run_Timer();
-        WATCHDOG_Notify(WDOG_TASK_TIMER);
         vTaskDelay(pdMS_TO_TICKS(1)); // aguarda 1 ms
     }
 }
