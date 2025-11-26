@@ -10,7 +10,7 @@
 // ==== Estruturas para armazenar estados ====
 typedef struct {
     bool button[BTN_COUNT];
-    uint16_t adc[ADC_COUNT];
+    float adc[ADC_COUNT];
 } IO_InputState_t;
 
 typedef struct {

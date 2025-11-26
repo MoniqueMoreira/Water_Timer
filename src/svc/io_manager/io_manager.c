@@ -102,9 +102,10 @@ RETURN_STATUS_t IO_MANAGER_Init(void) {
 
 // ==== Funções Run com retorno de status ====
 RETURN_STATUS_t IO_MANAGER_Input_Run(void) {
+    RETURN_STATUS_t err = RETURN_STATUS_TIMEOUT;
     if(xSemaphoreTake(self.io_mutex, pdMS_TO_TICKS(100)) == pdTRUE) 
     {
-        for(int i=0; i<BTN_COUNT; i++){
+        for(uint8_t i=0; i<BTN_COUNT; i++){
             uint8_t raw = gpio_get(button_pins[i]);
             self.inputs.button[i] = DEBOUNCE_Update(i, raw);
         }
@@ -117,12 +118,14 @@ RETURN_STATUS_t IO_MANAGER_Input_Run(void) {
         }
 
         xSemaphoreGive(self.io_mutex);
-        return RETURN_STATUS_OK;
+        err = RETURN_STATUS_OK;
     }
-    return RETURN_STATUS_TIMEOUT;
+    WATCHDOG_Notify(WDOG_TASK_IO_INPUT);
+    return err;
 }
 
 RETURN_STATUS_t IO_MANAGER_Output_Run(void) {
+    RETURN_STATUS_t err = RETURN_STATUS_TIMEOUT;
     if(xSemaphoreTake(self.io_mutex, pdMS_TO_TICKS(100)) == pdTRUE) 
     {
         for(int i=0; i<LED_COUNT; i++){
@@ -134,9 +137,11 @@ RETURN_STATUS_t IO_MANAGER_Output_Run(void) {
         }
 
         xSemaphoreGive(self.io_mutex);
-        return RETURN_STATUS_OK;
+
+        err = RETURN_STATUS_OK;
     }
-    return RETURN_STATUS_TIMEOUT;
+    WATCHDOG_Notify(WDOG_TASK_IO_OUTPUT);
+    return err;
 }
 
 // ==== Input Task ====
@@ -146,8 +151,6 @@ static void __IO_MANAGER_Input_Task__(void *pvParameters) {
 
     while(1){
         IO_MANAGER_Input_Run();
-
-        WATCHDOG_Notify(WDOG_TASK_IO_INPUT);
         vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(50));
     }
 }
@@ -155,12 +158,10 @@ static void __IO_MANAGER_Input_Task__(void *pvParameters) {
 // ==== Output Task ====
 static void __IO_MANAGER_Output_Task__(void *pvParameters) {
     (void) pvParameters;
-
+    TickType_t xLastWakeTime = xTaskGetTickCount();
     while(1){
         IO_MANAGER_Output_Run();
-
-        WATCHDOG_Notify(WDOG_TASK_IO_OUTPUT);
-        vTaskDelay(pdMS_TO_TICKS(50));
+        vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(50));
     }
 }
 
