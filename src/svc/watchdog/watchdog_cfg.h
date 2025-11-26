@@ -8,8 +8,7 @@ typedef enum
     WDOG_TASK_IO_INPUT,
     WDOG_TASK_IO_OUTPUT,
     WDOG_TASK_TIMER,
-    //WDOG_TASK_SETUP,
-    //WDOG_TASK_TIMER,
+    WDOG_TASK_SETUP,
 
     WDOG_TASK_SIZE,
 } WdogTaskIndex_t;

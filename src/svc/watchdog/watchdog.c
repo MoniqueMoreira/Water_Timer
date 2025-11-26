@@ -42,7 +42,6 @@ static void __WATCHDOG_Task__(void *param)
 
         if (all_ok)
         {
-            printf("[WDG] Todas as tarefas OK\n");
             watchdog_update(); // alimenta o watchdog de hardware
         }
         else
